@@ -41,7 +41,7 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 		fmt.Fprintf(rep, "\n\n<b>Конфликты</b>\n")
 
 		for _, c := range res.Conflicts {
-			fmt.Fprintf(rep, "\n<a href=\"%s\">%s</a> -> <a href=\n%s\">%s</a>",
+			fmt.Fprintf(rep, "\n<a href=\"%s\">%s</a> -> <a href=\"%s\">%s</a>",
 				strings.Join([]string{bsnViewerPrefix, c.Recommender}, ""),
 				accountAbbr(c.Recommender),
 				strings.Join([]string{bsnViewerPrefix, c.Recommended}, ""),
