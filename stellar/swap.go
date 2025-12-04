@@ -97,20 +97,27 @@ func (c *Client) GetSwappableBalances(ctx context.Context, accountID string) ([]
 	return balances, nil
 }
 
+// getAssetType returns the correct asset type based on code length
+func getAssetType(code string) horizonclient.AssetType {
+	if len(code) <= 4 {
+		return horizonclient.AssetType4
+	}
+	return horizonclient.AssetType12
+}
+
 // GetSwapPrice returns the price of 1 unit of source asset in destination asset terms
 // Returns destAmount for 1 unit of sourceAsset
 func (c *Client) GetSwapPrice(
 	ctx context.Context,
-	accountID string,
 	sourceCode, sourceIssuer string,
 	destCode, destIssuer string,
 ) (float64, error) {
 	pr := horizonclient.StrictSendPathsRequest{
-		SourceAmount:       "1",
-		SourceAssetCode:    sourceCode,
-		SourceAssetIssuer:  sourceIssuer,
-		SourceAssetType:    horizonclient.AssetType4,
-		DestinationAccount: accountID,
+		SourceAmount:      "1",
+		SourceAssetCode:   sourceCode,
+		SourceAssetIssuer: sourceIssuer,
+		SourceAssetType:   getAssetType(sourceCode),
+		DestinationAssets: fmt.Sprintf("%s:%s", destCode, destIssuer),
 	}
 
 	// Use public net client directly for path finding
@@ -128,18 +135,14 @@ func (c *Client) GetSwapPrice(
 		return 0, fmt.Errorf("no path found for %s -> %s", sourceCode, destCode)
 	}
 
-	// Find path to LABR specifically
-	for _, path := range paths.Embedded.Records {
-		if path.DestinationAssetCode == destCode && path.DestinationAssetIssuer == destIssuer {
-			destAmount, err := strconv.ParseFloat(path.DestinationAmount, 64)
-			if err != nil {
-				continue
-			}
-			return destAmount, nil
-		}
+	// Get the best path (first one)
+	bestPath := paths.Embedded.Records[0]
+	destAmount, err := strconv.ParseFloat(bestPath.DestinationAmount, 64)
+	if err != nil {
+		return 0, err
 	}
 
-	return 0, fmt.Errorf("no path found for %s -> %s", sourceCode, destCode)
+	return destAmount, nil
 }
 
 // SwapToLABR swaps the given amount of source asset to LABR
@@ -167,7 +170,7 @@ func (c *Client) SwapToLABR(
 		SourceAmount:      fmt.Sprintf("%.7f", amount),
 		SourceAssetCode:   sourceCode,
 		SourceAssetIssuer: sourceIssuer,
-		SourceAssetType:   horizonclient.AssetType4,
+		SourceAssetType:   getAssetType(sourceCode),
 		DestinationAssets: fmt.Sprintf("%s:%s", LABRAsset, LABRIssuer),
 	}
 
@@ -255,7 +258,7 @@ func (c *Client) ExecuteSwaps(
 
 	for _, bal := range balances {
 		// Get price: how much LABR for 1 unit of source asset
-		labrPerUnit, err := c.GetSwapPrice(ctx, accountID, bal.Code, bal.Issuer, LABRAsset, LABRIssuer)
+		labrPerUnit, err := c.GetSwapPrice(ctx, bal.Code, bal.Issuer, LABRAsset, LABRIssuer)
 		if err != nil {
 			summary.Errors = append(summary.Errors, SwapError{
 				Asset: bal.Code,
