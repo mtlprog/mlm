@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -31,9 +32,11 @@ type app struct {
 }
 
 func main() {
+	fmt.Println("mlmc starting...")
+
 	ctx := context.Background()
 
-	l := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
+	l := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	})).WithGroup("mlmc")
 
