@@ -95,6 +95,17 @@ func main() {
 				Usage:  "Submit pending report or create new one and submit",
 				Action: a.distribute,
 			},
+			{
+				Name:  "token",
+				Usage: "Token management",
+				Commands: []*cli.Command{
+					{
+						Name:   "swap",
+						Usage:  "Swap tokens to LABR via DEX",
+						Action: a.tokenSwap,
+					},
+				},
+			},
 		},
 	}
 
@@ -236,4 +247,69 @@ func (a *app) sendTelegramNotification(ctx context.Context, res *mlm.DistributeR
 	})
 
 	return err
+}
+
+func (a *app) tokenSwap(ctx context.Context, cmd *cli.Command) error {
+	a.log.InfoContext(ctx, "starting token swap",
+		slog.Float64("price_threshold", a.cfg.SwapPriceThreshold),
+	)
+
+	summary, err := a.stellar.ExecuteSwaps(ctx, a.cfg.Address, a.cfg.Seed, a.cfg.SwapPriceThreshold)
+	if err != nil {
+		return err
+	}
+
+	a.log.InfoContext(ctx, "swap completed",
+		slog.Int("swaps", len(summary.Swaps)),
+		slog.Int("price_exceeded", len(summary.PriceExceeded)),
+		slog.Float64("total_from_eur", summary.TotalFromEUR),
+		slog.Float64("total_to_labr", summary.TotalToLABR),
+	)
+
+	if cmd.Root().Bool("notify-tg") {
+		if err := a.sendSwapNotifications(ctx, summary); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (a *app) sendSwapNotifications(ctx context.Context, summary *stellar.SwapSummary) error {
+	b, err := bot.New(a.cfg.TelegramToken)
+	if err != nil {
+		return err
+	}
+
+	// Send swap report if any swaps were made
+	if len(summary.Swaps) > 0 {
+		swapReport := stellar.FormatSwapReport(summary)
+		_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+			Text:               swapReport,
+			ChatID:             a.cfg.ReportToChatID,
+			MessageThreadID:    int(a.cfg.ReportToMessageThreadID),
+			ParseMode:          models.ParseModeHTML,
+			LinkPreviewOptions: &models.LinkPreviewOptions{IsDisabled: lo.ToPtr(true)},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	// Send price alert if any prices exceeded threshold
+	if len(summary.PriceExceeded) > 0 {
+		alertReport := stellar.FormatPriceAlert(summary.PriceExceeded, a.cfg.AlertMentionUsername)
+		_, err = b.SendMessage(ctx, &bot.SendMessageParams{
+			Text:               alertReport,
+			ChatID:             a.cfg.ReportToChatID,
+			MessageThreadID:    int(a.cfg.ReportToMessageThreadID),
+			ParseMode:          models.ParseModeHTML,
+			LinkPreviewOptions: &models.LinkPreviewOptions{IsDisabled: lo.ToPtr(true)},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
