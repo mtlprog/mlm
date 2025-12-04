@@ -2,18 +2,20 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Important Rules
+
+- **Never commit automatically** — only commit when explicitly requested by the user
+
 ## Project Overview
 
-MLM (Montelibero Multi-Level Marketing) is a Go application that distributes EURMTL rewards to Stellar network accounts based on MTLAP token holdings and recommendation relationships. It consists of two binaries:
+MLM (Montelibero Multi-Level Marketing) is a Go CLI application that distributes EURMTL rewards to Stellar network accounts based on MTLAP token holdings and recommendation relationships.
 
-- **mlm**: Long-running Telegram bot that handles transaction submission via callback buttons
-- **mlmc**: CLI tool for generating distribution reports and optionally submitting transactions
+- **mlmc**: CLI tool for generating distribution reports, sending them to Telegram, and optionally submitting transactions
 
 ## Build & Development Commands
 
 ```bash
 make build        # Generate sqlc code (run after changing queries.sql)
-make run          # Build and run the mlm bot
 make test         # Run all tests with verbose output
 ```
 
@@ -27,7 +29,7 @@ make migrate-status                # Check migration status
 make migrate-generate name=foo    # Create new migration
 ```
 
-Migrations are embedded via `//go:embed migrations/*.sql` and auto-run on mlm startup.
+Migrations are embedded via `//go:embed migrations/*.sql`.
 
 ## Architecture
 
@@ -37,7 +39,7 @@ Migrations are embedded via `//go:embed migrations/*.sql` and auto-run on mlm st
 2. Accounts with `RecommendToMTLA*` data entries become recommenders (min 4 MTLAP required)
 3. `distributor.Distributor.CalculateParts()` computes reward distribution based on MTLAP changes since last report
 4. 1/3 of the distribution address's EURMTL balance is distributed
-5. Reports are stored in PostgreSQL; XDR transactions can be submitted via Telegram bot or CLI
+5. Reports are stored in PostgreSQL; XDR transactions can be submitted via CLI
 
 ### Key Interfaces (mlm.go)
 
@@ -49,7 +51,6 @@ Migrations are embedded via `//go:embed migrations/*.sql` and auto-run on mlm st
 
 - `stellar/`: Horizon client wrapper, MTLAP/EURMTL constants, recommendation parsing
 - `distributor/`: Distribution calculation and report creation
-- `tgbot/`: Telegram bot for XDR submission callbacks
 - `report/`: HTML report formatting for Telegram
 - `db/`: sqlc-generated PostgreSQL queries
 - `config/`: Environment variable configuration
@@ -59,10 +60,9 @@ Migrations are embedded via `//go:embed migrations/*.sql` and auto-run on mlm st
 Environment variables (loaded from `.env`):
 
 - `POSTGRES_DSN`: PostgreSQL connection string
-- `TELEGRAM_TOKEN`: Bot token
+- `TELEGRAM_TOKEN`: Bot token for sending reports
 - `STELLAR_ADDRESS`: Distribution source address
 - `STELLAR_SEED`: Signing key for transactions
-- `ALLOWED_USER_IDS`: Comma-separated Telegram user IDs for admin access
 - `REPORT_TO_CHAT_ID`, `REPORT_TO_MESSAGE_THREAD_ID`: Where to send reports
 - `SUBMIT`: Set to "true" to auto-submit transactions
 - `WITHOUT_REPORT`: Set to "true" to skip database report creation
@@ -76,4 +76,3 @@ Schema in `migrations/`:
 - `report_recommends`: Recommender-recommended relationships per report
 - `report_distributes`: Actual payment amounts per recommender
 - `report_conflicts`: When multiple recommenders claim same account
-- `states`: Bot state storage
