@@ -228,10 +228,11 @@ func (a *app) sendTelegramNotification(ctx context.Context, res *mlm.DistributeR
 	}
 
 	_, err = b.SendMessage(ctx, &bot.SendMessageParams{
-		Text:            report.FromDistributeResult(lo.FromPtr(res)),
-		ChatID:          a.cfg.ReportToChatID,
-		MessageThreadID: int(a.cfg.ReportToMessageThreadID),
-		ParseMode:       models.ParseModeHTML,
+		Text:               report.FromDistributeResult(lo.FromPtr(res)),
+		ChatID:             a.cfg.ReportToChatID,
+		MessageThreadID:    int(a.cfg.ReportToMessageThreadID),
+		ParseMode:          models.ParseModeHTML,
+		LinkPreviewOptions: &models.LinkPreviewOptions{IsDisabled: lo.ToPtr(true)},
 	})
 
 	return err
