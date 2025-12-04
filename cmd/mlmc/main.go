@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"os"
 
@@ -32,13 +31,15 @@ type app struct {
 }
 
 func main() {
-	fmt.Println("mlmc starting...")
+	defer os.Stderr.Sync()
 
 	ctx := context.Background()
 
-	l := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+	l := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	})).WithGroup("mlmc")
+
+	l.InfoContext(ctx, "mlmc starting...")
 
 	cfg := config.Get()
 
