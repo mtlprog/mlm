@@ -23,6 +23,7 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 
 Счёт программы: <a href="%s">%s</a>
 Дата: %s
+Распределение: %s
 Сумма: %f LABR
 Рекомендателей: %d
 Рекомендаций: %d
@@ -32,6 +33,7 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 		strings.Join([]string{bsnViewerPrefix, res.SourceAddress}, ""),
 		accountAbbr(res.SourceAddress),
 		res.CreatedAt.Format(time.DateOnly),
+		nextDistributionDate(res.CreatedAt).Format(time.DateOnly),
 		res.Amount,
 		len(res.Distributes),
 		len(res.Recommends),
@@ -89,4 +91,14 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 
 func accountAbbr(accountID string) string {
 	return accountID[:5] + "..." + accountID[len(accountID)-5:]
+}
+
+func nextDistributionDate(from time.Time) time.Time {
+	year, month, day := from.Date()
+
+	if day <= 6 {
+		return time.Date(year, month, 6, 0, 0, 0, 0, from.Location())
+	}
+
+	return time.Date(year, month+1, 6, 0, 0, 0, 0, from.Location())
 }
