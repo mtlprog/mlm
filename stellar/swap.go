@@ -101,20 +101,26 @@ func (c *Client) GetSwappableBalances(ctx context.Context, accountID string) ([]
 // Returns destAmount for 1 unit of sourceAsset
 func (c *Client) GetSwapPrice(
 	ctx context.Context,
+	accountID string,
 	sourceCode, sourceIssuer string,
 	destCode, destIssuer string,
 ) (float64, error) {
 	pr := horizonclient.StrictSendPathsRequest{
-		SourceAmount:      "1",
-		SourceAssetCode:   sourceCode,
-		SourceAssetIssuer: sourceIssuer,
-		SourceAssetType:   horizonclient.AssetType4,
-		DestinationAssets: fmt.Sprintf("%s:%s", destCode, destIssuer),
+		SourceAmount:       "1",
+		SourceAssetCode:    sourceCode,
+		SourceAssetIssuer:  sourceIssuer,
+		SourceAssetType:    horizonclient.AssetType4,
+		DestinationAccount: accountID,
 	}
 
 	// Use public net client directly for path finding
 	paths, err := horizonclient.DefaultPublicNetClient.StrictSendPaths(pr)
 	if err != nil {
+		// Try to get more details from Horizon error
+		if hErr, ok := err.(*horizonclient.Error); ok {
+			return 0, fmt.Errorf("horizon error: %s (status=%d, detail=%s)",
+				hErr.Problem.Title, hErr.Problem.Status, hErr.Problem.Detail)
+		}
 		return 0, err
 	}
 
@@ -122,14 +128,18 @@ func (c *Client) GetSwapPrice(
 		return 0, fmt.Errorf("no path found for %s -> %s", sourceCode, destCode)
 	}
 
-	// Get the best path (first one)
-	bestPath := paths.Embedded.Records[0]
-	destAmount, err := strconv.ParseFloat(bestPath.DestinationAmount, 64)
-	if err != nil {
-		return 0, err
+	// Find path to LABR specifically
+	for _, path := range paths.Embedded.Records {
+		if path.DestinationAssetCode == destCode && path.DestinationAssetIssuer == destIssuer {
+			destAmount, err := strconv.ParseFloat(path.DestinationAmount, 64)
+			if err != nil {
+				continue
+			}
+			return destAmount, nil
+		}
 	}
 
-	return destAmount, nil
+	return 0, fmt.Errorf("no path found for %s -> %s", sourceCode, destCode)
 }
 
 // SwapToLABR swaps the given amount of source asset to LABR
@@ -245,7 +255,7 @@ func (c *Client) ExecuteSwaps(
 
 	for _, bal := range balances {
 		// Get price: how much LABR for 1 unit of source asset
-		labrPerUnit, err := c.GetSwapPrice(ctx, bal.Code, bal.Issuer, LABRAsset, LABRIssuer)
+		labrPerUnit, err := c.GetSwapPrice(ctx, accountID, bal.Code, bal.Issuer, LABRAsset, LABRIssuer)
 		if err != nil {
 			summary.Errors = append(summary.Errors, SwapError{
 				Asset: bal.Code,
