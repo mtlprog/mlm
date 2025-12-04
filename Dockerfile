@@ -31,4 +31,4 @@ COPY --from=builder /app/mlmc .
 # Set timezone
 ENV TZ=Europe/Podgorica
 
-ENTRYPOINT ["./mlmc"]
+CMD ["./mlmc"]
