@@ -102,7 +102,7 @@ func (d *Distributor) getLastDistribute(ctx context.Context) (map[string]map[str
 }
 
 func (d *Distributor) getDistributeAmount(ctx context.Context) (float64, error) {
-	balstr, err := d.stellar.Balance(ctx, d.cfg.Address, stellar.EURMTLAsset, stellar.EURMTLIssuer)
+	balstr, err := d.stellar.Balance(ctx, d.cfg.Address, stellar.LABRAsset, stellar.LABRIssuer)
 	if err != nil {
 		return 0, err
 	}
@@ -193,7 +193,7 @@ func (d *Distributor) CalculateParts(
 		if amount > 0 {
 			res.Distributes = append(res.Distributes, db.ReportDistribute{
 				Recommender: recommender.AccountID,
-				Asset:       stellar.EURMTLAsset,
+				Asset:       stellar.LABRAsset,
 				Amount:      amount,
 			})
 		}
@@ -212,7 +212,7 @@ func (d *Distributor) getXDR(ctx context.Context, distributes []db.ReportDistrib
 		return &txnbuild.Payment{
 			Destination: d.Recommender,
 			Amount:      fmt.Sprintf("%.7f", d.Amount),
-			Asset:       txnbuild.CreditAsset{Code: d.Asset, Issuer: stellar.EURMTLIssuer},
+			Asset:       txnbuild.CreditAsset{Code: d.Asset, Issuer: stellar.LABRIssuer},
 		}
 	})
 

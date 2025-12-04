@@ -22,12 +22,12 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 	fmt.Fprintf(rep, `
 
 Дата: %s
-Сумма: %f EURMTL
+Сумма: %f LABR
 Рекомендателей: %d
 Рекомендаций: %d
 Новые участники: %d
 Участники с повышением уровня: %d
-Выплата за тег: %f EURMTL`,
+Выплата за тег: %f LABR`,
 		res.CreatedAt.Format(time.DateOnly),
 		res.Amount,
 		len(res.Distributes),
