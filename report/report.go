@@ -13,10 +13,9 @@ const bsnViewerPrefix = "https://bsn.mtla.me/accounts/"
 func FromDistributeResult(res mlm.DistributeResult) string {
 	rep := &strings.Builder{}
 
-	if res.XDR != "" {
+	if res.ReportID != 0 {
 		fmt.Fprintf(rep, "<b>Отчет наград за продвижение участников</b>")
-	}
-	if res.XDR == "" {
+	} else {
 		fmt.Fprintf(rep, "<b>Предварительный отчет наград за продвижение участников</b>")
 	}
 
@@ -70,10 +69,6 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 		if isEmpty {
 			fmt.Fprintf(rep, "\nНикто никаких наград не заслужил :(")
 		}
-	}
-
-	if res.XDR != "" {
-		fmt.Fprintf(rep, "\n\n<b>XDR</b>\n<code>\n%s\n</code>", res.XDR)
 	}
 
 	return rep.String()
