@@ -57,6 +57,7 @@ type DistributeResult struct {
 	AmountPerTag            float64
 	RecommendedNewCount     int64
 	RecommendedLevelUpCount int64
+	SourceAddress           string
 }
 
 type DistributeOptions struct {

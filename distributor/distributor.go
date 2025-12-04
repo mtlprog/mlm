@@ -58,6 +58,8 @@ func (d *Distributor) Distribute(ctx context.Context, opts ...mlm.DistributeOpti
 		return nil, err
 	}
 
+	res.SourceAddress = d.cfg.Address
+
 	res.MissingTrustlines, err = d.checkTrustlines(ctx, res.Distributes)
 	if err != nil {
 		return nil, err

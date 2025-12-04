@@ -21,6 +21,7 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 
 	fmt.Fprintf(rep, `
 
+Счёт программы: <a href="%s">%s</a>
 Дата: %s
 Сумма: %f LABR
 Рекомендателей: %d
@@ -28,6 +29,8 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 Новые участники: %d
 Участники с повышением уровня: %d
 Выплата за тег: %f LABR`,
+		strings.Join([]string{bsnViewerPrefix, res.SourceAddress}, ""),
+		accountAbbr(res.SourceAddress),
 		res.CreatedAt.Format(time.DateOnly),
 		res.Amount,
 		len(res.Distributes),
