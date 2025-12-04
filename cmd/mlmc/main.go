@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -32,8 +32,7 @@ type app struct {
 }
 
 func main() {
-	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
-	log.Println("mlmc starting...")
+	fmt.Println("mlmc starting...")
 
 	ctx := context.Background()
 
@@ -41,17 +40,14 @@ func main() {
 		Level: slog.LevelDebug,
 	})).WithGroup("mlmc")
 
-	log.Println("loading config...")
 	cfg := config.Get()
 
-	log.Println("connecting to postgres...")
 	pg, err := pgx.Connect(ctx, cfg.PostgresDSN)
 	if err != nil {
-		log.Printf("postgres connection error: %v", err)
+		l.ErrorContext(ctx, err.Error())
 		os.Exit(1)
 	}
 	defer pg.Close(ctx)
-	log.Println("postgres connected")
 
 	q := db.New(pg)
 	cl := horizonclient.DefaultPublicNetClient
@@ -101,12 +97,10 @@ func main() {
 		},
 	}
 
-	log.Printf("running command with args: %v", os.Args)
 	if err := cmd.Run(ctx, os.Args); err != nil {
-		log.Printf("command error: %v", err)
+		l.ErrorContext(ctx, err.Error())
 		os.Exit(1)
 	}
-	log.Println("mlmc finished successfully")
 }
 
 func (a *app) reportDry(ctx context.Context, cmd *cli.Command) error {
