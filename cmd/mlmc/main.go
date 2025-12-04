@@ -285,9 +285,18 @@ func (a *app) tokenSwap(ctx context.Context, cmd *cli.Command) error {
 	a.log.InfoContext(ctx, "swap completed",
 		slog.Int("swaps", len(summary.Swaps)),
 		slog.Int("price_exceeded", len(summary.PriceExceeded)),
+		slog.Int("errors", len(summary.Errors)),
 		slog.Float64("total_from_eur", summary.TotalFromEUR),
 		slog.Float64("total_to_labr", summary.TotalToLABR),
 	)
+
+	for _, swapErr := range summary.Errors {
+		a.log.ErrorContext(ctx, "swap error",
+			slog.String("asset", swapErr.Asset),
+			slog.String("stage", swapErr.Stage),
+			slog.String("error", swapErr.Error),
+		)
+	}
 
 	if cmd.Root().Bool("notify-tg") {
 		if err := a.sendSwapNotifications(ctx, summary); err != nil {

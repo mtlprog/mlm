@@ -39,8 +39,16 @@ type SwapResult struct {
 type SwapSummary struct {
 	Swaps          []SwapResult
 	PriceExceeded  []PriceExceededAlert
+	Errors         []SwapError
 	TotalFromEUR   float64
 	TotalToLABR    float64
+}
+
+// SwapError represents an error during swap
+type SwapError struct {
+	Asset string
+	Stage string
+	Error string
 }
 
 // PriceExceededAlert represents an alert when price threshold is exceeded
@@ -227,6 +235,7 @@ func (c *Client) ExecuteSwaps(
 	summary := &SwapSummary{
 		Swaps:         make([]SwapResult, 0),
 		PriceExceeded: make([]PriceExceededAlert, 0),
+		Errors:        make([]SwapError, 0),
 	}
 
 	balances, err := c.GetSwappableBalances(ctx, accountID)
@@ -238,6 +247,11 @@ func (c *Client) ExecuteSwaps(
 		// Get price: how much LABR for 1 unit of source asset
 		labrPerUnit, err := c.GetSwapPrice(ctx, bal.Code, bal.Issuer, LABRAsset, LABRIssuer)
 		if err != nil {
+			summary.Errors = append(summary.Errors, SwapError{
+				Asset: bal.Code,
+				Stage: "get_price",
+				Error: err.Error(),
+			})
 			continue
 		}
 
@@ -261,6 +275,11 @@ func (c *Client) ExecuteSwaps(
 
 		hash, actualAmount, err := c.SwapToLABR(ctx, seed, bal.Code, bal.Issuer, bal.Balance, minDestAmount)
 		if err != nil {
+			summary.Errors = append(summary.Errors, SwapError{
+				Asset: bal.Code,
+				Stage: "swap",
+				Error: err.Error(),
+			})
 			continue
 		}
 
