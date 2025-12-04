@@ -153,13 +153,23 @@ func (c *Client) SwapToLABR(
 	amount float64,
 	minDestAmount float64,
 ) (string, float64, error) {
+	if seed == "" {
+		return "", 0, fmt.Errorf("STELLAR_SEED is not set (len=%d)", len(seed))
+	}
+
 	pair, err := keypair.ParseFull(seed)
 	if err != nil {
-		return "", 0, err
+		return "", 0, fmt.Errorf("failed to parse seed (len=%d): %w", len(seed), err)
+	}
+
+	// Validate destination address
+	destAddr := pair.Address()
+	if destAddr == "" {
+		return "", 0, fmt.Errorf("pair.Address() returned empty string")
 	}
 
 	accountDetail, err := c.cl.AccountDetail(horizonclient.AccountRequest{
-		AccountID: pair.Address(),
+		AccountID: destAddr,
 	})
 	if err != nil {
 		return "", 0, err
@@ -195,18 +205,19 @@ func (c *Client) SwapToLABR(
 	for _, pa := range bestPath.Path {
 		if pa.Type == "native" {
 			pathAssets = append(pathAssets, txnbuild.NativeAsset{})
-		} else {
+		} else if pa.Issuer != "" {
 			pathAssets = append(pathAssets, txnbuild.CreditAsset{
 				Code:   pa.Code,
 				Issuer: pa.Issuer,
 			})
 		}
+		// Skip assets with empty issuer
 	}
 
 	op := &txnbuild.PathPaymentStrictSend{
 		SendAsset:   txnbuild.CreditAsset{Code: sourceCode, Issuer: sourceIssuer},
 		SendAmount:  fmt.Sprintf("%.7f", amount),
-		Destination: pair.Address(),
+		Destination: destAddr,
 		DestAsset:   txnbuild.CreditAsset{Code: LABRAsset, Issuer: LABRIssuer},
 		DestMin:     fmt.Sprintf("%.7f", minDestAmount),
 		Path:        pathAssets,
