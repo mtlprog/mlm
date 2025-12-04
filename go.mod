@@ -1,4 +1,4 @@
-module github.com/Montelibero/mlm
+module github.com/mtlprog/mlm
 
 go 1.24.0
 

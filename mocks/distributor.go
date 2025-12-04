@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	mlm "github.com/Montelibero/mlm"
+	mlm "github.com/mtlprog/mlm"
 	mock "github.com/stretchr/testify/mock"
 )
 

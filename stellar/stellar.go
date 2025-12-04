@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Montelibero/mlm"
+	"github.com/mtlprog/mlm"
 	"github.com/samber/lo"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stellar/go/keypair"

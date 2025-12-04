@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Montelibero/mlm"
+	"github.com/mtlprog/mlm"
 )
 
 const bsnViewerPrefix = "https://bsn.mtla.me/accounts/"

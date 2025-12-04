@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Montelibero/mlm/stellar"
+	"github.com/mtlprog/mlm/stellar"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stellar/go/clients/horizonclient"
 	"github.com/stretchr/testify/require"

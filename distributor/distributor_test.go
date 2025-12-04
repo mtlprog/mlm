@@ -3,8 +3,8 @@ package distributor_test
 import (
 	"testing"
 
-	"github.com/Montelibero/mlm"
-	"github.com/Montelibero/mlm/distributor"
+	"github.com/mtlprog/mlm"
+	"github.com/mtlprog/mlm/distributor"
 	"github.com/stretchr/testify/require"
 )
 

@@ -5,7 +5,7 @@ MLM (Montelibero Multi-Level Marketing) — CLI для распределени�
 ## Установка
 
 ```bash
-go install github.com/Montelibero/mlm/cmd/mlmc@latest
+go install github.com/mtlprog/mlm/cmd/mlmc@latest
 ```
 
 ## Использование
