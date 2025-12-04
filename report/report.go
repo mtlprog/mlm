@@ -8,7 +8,7 @@ import (
 	"github.com/mtlprog/mlm"
 )
 
-const bsnViewerPrefix = "https://bsn.mtla.me/accounts/"
+const bsnViewerPrefix = "https://bsn.expert/accounts/"
 
 func FromDistributeResult(res mlm.DistributeResult) string {
 	rep := &strings.Builder{}
