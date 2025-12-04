@@ -64,12 +64,15 @@ func (c *Client) GetSwappableBalances(ctx context.Context, accountID string) ([]
 		AccountID: accountID,
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get account detail: %w", err)
 	}
 
 	var balances []TokenBalance
 	for _, token := range SwappableTokens {
 		balStr := acc.GetCreditBalance(token.Code, token.Issuer)
+		if balStr == "" {
+			continue // no trustline or zero balance
+		}
 		bal, err := strconv.ParseFloat(balStr, 64)
 		if err != nil {
 			continue

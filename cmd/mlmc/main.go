@@ -252,7 +252,30 @@ func (a *app) sendTelegramNotification(ctx context.Context, res *mlm.DistributeR
 func (a *app) tokenSwap(ctx context.Context, cmd *cli.Command) error {
 	a.log.InfoContext(ctx, "starting token swap",
 		slog.Float64("price_threshold", a.cfg.SwapPriceThreshold),
+		slog.String("address", a.cfg.Address),
 	)
+
+	// First check what balances we have
+	balances, err := a.stellar.GetSwappableBalances(ctx, a.cfg.Address)
+	if err != nil {
+		return err
+	}
+
+	a.log.InfoContext(ctx, "found swappable balances",
+		slog.Int("count", len(balances)),
+	)
+
+	for _, bal := range balances {
+		a.log.InfoContext(ctx, "balance",
+			slog.String("asset", bal.Code),
+			slog.Float64("amount", bal.Balance),
+		)
+	}
+
+	if len(balances) == 0 {
+		a.log.InfoContext(ctx, "no swappable balances found, nothing to do")
+		return nil
+	}
 
 	summary, err := a.stellar.ExecuteSwaps(ctx, a.cfg.Address, a.cfg.Seed, a.cfg.SwapPriceThreshold)
 	if err != nil {
