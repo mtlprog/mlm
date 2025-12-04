@@ -5,12 +5,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Important Rules
 
 - **Never commit automatically** — only commit when explicitly requested by the user
+- **Always use context7 MCP** for package documentation lookup
+- **Never dereference pointers with `*`** — use `lo.FromPtr()` / `lo.ToPtr()` from `github.com/samber/lo` to avoid panics on nil pointers
 
 ## Project Overview
 
 MLM (Montelibero Multi-Level Marketing) is a Go CLI application that distributes EURMTL rewards to Stellar network accounts based on MTLAP token holdings and recommendation relationships.
 
-- **mlmc**: CLI tool for generating distribution reports, sending them to Telegram, and optionally submitting transactions
+- **mlmc**: CLI tool with subcommands:
+  - `mlmc report dry` — dry-run report without saving to database
+  - `mlmc report create` — create and save report to database
+  - `mlmc distribute` — submit pending report (within 24h) or create new and submit
+  - `--notify-tg` flag sends Telegram notification
 
 ## Build & Development Commands
 
@@ -64,8 +70,6 @@ Environment variables (loaded from `.env`):
 - `STELLAR_ADDRESS`: Distribution source address
 - `STELLAR_SEED`: Signing key for transactions
 - `REPORT_TO_CHAT_ID`, `REPORT_TO_MESSAGE_THREAD_ID`: Where to send reports
-- `SUBMIT`: Set to "true" to auto-submit transactions
-- `WITHOUT_REPORT`: Set to "true" to skip database report creation
 
 ## Database
 

@@ -19,6 +19,14 @@ SELECT * FROM reports
 WHERE deleted_at IS NULL AND
   id = @id;
 
+-- name: GetPendingReport :one
+SELECT * FROM reports
+WHERE deleted_at IS NULL
+  AND hash IS NULL
+  AND created_at > now() - interval '24 hours'
+ORDER BY created_at DESC
+LIMIT 1;
+
 -- name: CreateReport :one
 INSERT INTO reports (created_at, xdr)
   VALUES (now(), @xdr) RETURNING id;

@@ -9,7 +9,8 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/samber/lo v1.47.0
 	github.com/stellar/go v0.0.0-20241105223651-39a8d368086a
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.11.1
+	github.com/urfave/cli/v3 v3.6.1
 )
 
 require (
