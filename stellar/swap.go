@@ -148,28 +148,21 @@ func (c *Client) GetSwapPrice(
 // SwapToLABR swaps the given amount of source asset to LABR
 func (c *Client) SwapToLABR(
 	ctx context.Context,
-	seed string,
+	accountID, seed string,
 	sourceCode, sourceIssuer string,
 	amount float64,
-	minDestAmount float64,
 ) (string, float64, error) {
 	if seed == "" {
-		return "", 0, fmt.Errorf("STELLAR_SEED is not set (len=%d)", len(seed))
+		return "", 0, fmt.Errorf("STELLAR_SEED is not set")
 	}
 
 	pair, err := keypair.ParseFull(seed)
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to parse seed (len=%d): %w", len(seed), err)
-	}
-
-	// Validate destination address
-	destAddr := pair.Address()
-	if destAddr == "" {
-		return "", 0, fmt.Errorf("pair.Address() returned empty string")
+		return "", 0, fmt.Errorf("failed to parse seed: %w", err)
 	}
 
 	accountDetail, err := c.cl.AccountDetail(horizonclient.AccountRequest{
-		AccountID: destAddr,
+		AccountID: accountID,
 	})
 	if err != nil {
 		return "", 0, err
@@ -200,6 +193,9 @@ func (c *Client) SwapToLABR(
 		return "", 0, err
 	}
 
+	// Apply 2% slippage tolerance to the expected destination amount
+	minDestAmount := destAmount * 0.98
+
 	// Build path assets
 	var pathAssets []txnbuild.Asset
 	for _, pa := range bestPath.Path {
@@ -214,11 +210,14 @@ func (c *Client) SwapToLABR(
 		// Skip assets with empty issuer
 	}
 
+	sendAsset := txnbuild.CreditAsset{Code: sourceCode, Issuer: sourceIssuer}
+	destAsset := txnbuild.CreditAsset{Code: LABRAsset, Issuer: LABRIssuer}
+
 	op := &txnbuild.PathPaymentStrictSend{
-		SendAsset:   txnbuild.CreditAsset{Code: sourceCode, Issuer: sourceIssuer},
+		SendAsset:   sendAsset,
 		SendAmount:  fmt.Sprintf("%.7f", amount),
-		Destination: destAddr,
-		DestAsset:   txnbuild.CreditAsset{Code: LABRAsset, Issuer: LABRIssuer},
+		Destination: accountID,
+		DestAsset:   destAsset,
 		DestMin:     fmt.Sprintf("%.7f", minDestAmount),
 		Path:        pathAssets,
 	}
@@ -244,6 +243,10 @@ func (c *Client) SwapToLABR(
 
 	res, err := c.cl.SubmitTransaction(tx)
 	if err != nil {
+		if hErr, ok := err.(*horizonclient.Error); ok {
+			return "", 0, fmt.Errorf("horizon error: %q (%s) - check horizon.Error.Problem for more information",
+				hErr.Problem.Title, hErr.Problem.Extras["result_codes"])
+		}
 		return "", 0, err
 	}
 
@@ -293,11 +296,7 @@ func (c *Client) ExecuteSwaps(
 			continue
 		}
 
-		// Calculate minimum destination amount (with 1% slippage)
-		expectedLABR := bal.Balance * labrPerUnit
-		minDestAmount := expectedLABR * 0.99
-
-		hash, actualAmount, err := c.SwapToLABR(ctx, seed, bal.Code, bal.Issuer, bal.Balance, minDestAmount)
+		hash, actualAmount, err := c.SwapToLABR(ctx, accountID, seed, bal.Code, bal.Issuer, bal.Balance)
 		if err != nil {
 			summary.Errors = append(summary.Errors, SwapError{
 				Asset: bal.Code,
