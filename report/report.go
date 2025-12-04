@@ -48,6 +48,16 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 		}
 	}
 
+	if len(res.MissingTrustlines) > 0 {
+		fmt.Fprintf(rep, "\n\n<b>Нет линии доверия к %s</b>\n", res.MissingTrustlines[0].Asset)
+
+		for _, mt := range res.MissingTrustlines {
+			fmt.Fprintf(rep, "\n<a href=\"%s\">%s</a>",
+				strings.Join([]string{bsnViewerPrefix, mt.AccountID}, ""),
+				accountAbbr(mt.AccountID))
+		}
+	}
+
 	if len(res.Distributes) > 0 {
 		fmt.Fprintf(rep, "\n\n<b>Распределение</b>\n")
 

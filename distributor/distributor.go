@@ -58,6 +58,11 @@ func (d *Distributor) Distribute(ctx context.Context, opts ...mlm.DistributeOpti
 		return nil, err
 	}
 
+	res.MissingTrustlines, err = d.checkTrustlines(ctx, res.Distributes)
+	if err != nil {
+		return nil, err
+	}
+
 	if opt.WithoutReport {
 		return res, nil
 	}
@@ -285,6 +290,26 @@ func (d *Distributor) createReport(ctx context.Context, res *mlm.DistributeResul
 	}
 
 	return reportID, tx.Commit(ctx)
+}
+
+func (d *Distributor) checkTrustlines(ctx context.Context, distributes []db.ReportDistribute) ([]mlm.MissingTrustline, error) {
+	var missing []mlm.MissingTrustline
+
+	for _, dist := range distributes {
+		has, err := d.stellar.HasTrustline(ctx, dist.Recommender, stellar.LABRAsset, stellar.LABRIssuer)
+		if err != nil {
+			return nil, fmt.Errorf("check trustline for %s: %w", dist.Recommender, err)
+		}
+
+		if !has {
+			missing = append(missing, mlm.MissingTrustline{
+				AccountID: dist.Recommender,
+				Asset:     stellar.LABRAsset,
+			})
+		}
+	}
+
+	return missing, nil
 }
 
 func New(

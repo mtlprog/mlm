@@ -46,6 +46,23 @@ func (c *Client) Balance(ctx context.Context, accountID, asset, issuer string) (
 	return acc.GetCreditBalance(asset, issuer), nil
 }
 
+func (c *Client) HasTrustline(ctx context.Context, accountID, asset, issuer string) (bool, error) {
+	acc, err := c.cl.AccountDetail(horizonclient.AccountRequest{
+		AccountID: accountID,
+	})
+	if err != nil {
+		return false, err
+	}
+
+	for _, balance := range acc.Balances {
+		if balance.Asset.Code == asset && balance.Asset.Issuer == issuer {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 func (c *Client) Recommenders(ctx context.Context) (*mlm.RecommendersFetchResult, error) {
 	var allAccounts []horizon.Account
 	accp, err := c.cl.Accounts(horizonclient.AccountsRequest{
