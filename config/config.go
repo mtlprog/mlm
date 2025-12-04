@@ -26,7 +26,7 @@ func Get() *Config {
 
 	swapPriceThreshold, _ := strconv.ParseFloat(os.Getenv("SWAP_PRICE_THRESHOLD"), 64)
 	if swapPriceThreshold == 0 {
-		swapPriceThreshold = 25.0
+		swapPriceThreshold = 15.0
 	}
 
 	alertMentionUsername := os.Getenv("ALERT_MENTION_USERNAME")
