@@ -37,11 +37,11 @@ type SwapResult struct {
 
 // SwapSummary represents the summary of all swap operations
 type SwapSummary struct {
-	Swaps          []SwapResult
-	PriceExceeded  []PriceExceededAlert
-	Errors         []SwapError
-	TotalFromEUR   float64
-	TotalToLABR    float64
+	Swaps         []SwapResult
+	PriceExceeded []PriceExceededAlert
+	Errors        []SwapError
+	TotalFromEUR  float64
+	TotalToLABR   float64
 }
 
 // SwapError represents an error during swap
@@ -257,7 +257,7 @@ func (c *Client) SwapToLABR(
 func (c *Client) ExecuteSwaps(
 	ctx context.Context,
 	accountID, seed string,
-	priceThreshold float64,
+	priceMinThreshold float64,
 ) (*SwapSummary, error) {
 	summary := &SwapSummary{
 		Swaps:         make([]SwapResult, 0),
@@ -286,12 +286,12 @@ func (c *Client) ExecuteSwaps(
 		// If 1 EURMTL = 0.05 LABR, then 1 LABR = 20 EURMTL
 		pricePerLABR := 1 / labrPerUnit
 
-		if pricePerLABR > priceThreshold {
+		if pricePerLABR < priceMinThreshold {
 			summary.PriceExceeded = append(summary.PriceExceeded, PriceExceededAlert{
 				FromAsset:    bal.Code,
 				FromAmount:   bal.Balance,
 				PricePerLABR: pricePerLABR,
-				Threshold:    priceThreshold,
+				Threshold:    priceMinThreshold,
 			})
 			continue
 		}
