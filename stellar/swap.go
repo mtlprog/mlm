@@ -105,15 +105,16 @@ func getAssetType(code string) horizonclient.AssetType {
 	return horizonclient.AssetType12
 }
 
-// GetSwapPrice returns the price of 1 unit of source asset in destination asset terms
-// Returns destAmount for 1 unit of sourceAsset
-func (c *Client) GetSwapPrice(
+// GetSwapPriceForAmount returns how much destination asset you get for a specific amount of source asset
+// This accounts for order book depth - larger amounts may get worse prices due to slippage
+func (c *Client) GetSwapPriceForAmount(
 	ctx context.Context,
 	sourceCode, sourceIssuer string,
 	destCode, destIssuer string,
+	amount float64,
 ) (float64, error) {
 	pr := horizonclient.StrictSendPathsRequest{
-		SourceAmount:      "1",
+		SourceAmount:      fmt.Sprintf("%.7f", amount),
 		SourceAssetCode:   sourceCode,
 		SourceAssetIssuer: sourceIssuer,
 		SourceAssetType:   getAssetType(sourceCode),
@@ -257,7 +258,7 @@ func (c *Client) SwapToLABR(
 func (c *Client) ExecuteSwaps(
 	ctx context.Context,
 	accountID, seed string,
-	priceMinThreshold float64,
+	priceMaxThreshold float64,
 ) (*SwapSummary, error) {
 	summary := &SwapSummary{
 		Swaps:         make([]SwapResult, 0),
@@ -271,8 +272,8 @@ func (c *Client) ExecuteSwaps(
 	}
 
 	for _, bal := range balances {
-		// Get price: how much LABR for 1 unit of source asset
-		labrPerUnit, err := c.GetSwapPrice(ctx, bal.Code, bal.Issuer, LABRAsset, LABRIssuer)
+		// Get price for the FULL amount (order book depth matters)
+		totalLABR, err := c.GetSwapPriceForAmount(ctx, bal.Code, bal.Issuer, LABRAsset, LABRIssuer, bal.Balance)
 		if err != nil {
 			summary.Errors = append(summary.Errors, SwapError{
 				Asset: bal.Code,
@@ -282,16 +283,17 @@ func (c *Client) ExecuteSwaps(
 			continue
 		}
 
-		// Price per LABR in source asset terms
-		// If 1 EURMTL = 0.05 LABR, then 1 LABR = 20 EURMTL
-		pricePerLABR := 1 / labrPerUnit
+		// Price per LABR in source asset terms (average price for the full amount)
+		// If 200 EURMTL = 10 LABR, then 1 LABR = 20 EURMTL
+		pricePerLABR := bal.Balance / totalLABR
 
-		if pricePerLABR < priceMinThreshold {
+		// Don't swap if price is too high (above threshold)
+		if pricePerLABR > priceMaxThreshold {
 			summary.PriceExceeded = append(summary.PriceExceeded, PriceExceededAlert{
 				FromAsset:    bal.Code,
 				FromAmount:   bal.Balance,
 				PricePerLABR: pricePerLABR,
-				Threshold:    priceMinThreshold,
+				Threshold:    priceMaxThreshold,
 			})
 			continue
 		}
