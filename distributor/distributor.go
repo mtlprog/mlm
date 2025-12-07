@@ -18,6 +18,7 @@ import (
 )
 
 var ErrNoBalance = errors.New("no balance")
+var ErrNoDistributes = errors.New("no distributes: nothing to distribute")
 
 type Distributor struct {
 	cfg     *config.Config
@@ -210,6 +211,10 @@ func (d *Distributor) CalculateParts(
 }
 
 func (d *Distributor) getXDR(ctx context.Context, distributes []db.ReportDistribute) (string, error) {
+	if len(distributes) == 0 {
+		return "", ErrNoDistributes
+	}
+
 	accountDetail, err := d.stellar.AccountDetail(d.cfg.Address)
 	if err != nil {
 		return "", err
