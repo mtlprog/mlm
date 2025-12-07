@@ -228,12 +228,13 @@ func (a *app) buildResultFromReport(ctx context.Context, rep db.Report) (*mlm.Di
 	}
 
 	return &mlm.DistributeResult{
-		ReportID:    rep.ID,
-		XDR:         rep.Xdr,
-		CreatedAt:   rep.CreatedAt.Time,
-		Recommends:  recommends,
-		Distributes: distributes,
-		Conflicts:   conflicts,
+		ReportID:      rep.ID,
+		XDR:           rep.Xdr,
+		CreatedAt:     rep.CreatedAt.Time,
+		Recommends:    recommends,
+		Distributes:   distributes,
+		Conflicts:     conflicts,
+		SourceAddress: a.cfg.Address,
 	}, nil
 }
 
