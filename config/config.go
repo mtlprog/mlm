@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 
@@ -16,6 +17,19 @@ type Config struct {
 	ReportToMessageThreadID int64
 	SwapPriceThreshold      float64
 	AlertMentionUsername    string
+}
+
+func (c *Config) Validate() error {
+	if c.PostgresDSN == "" {
+		return fmt.Errorf("POSTGRES_DSN is required")
+	}
+	if c.Address == "" {
+		return fmt.Errorf("STELLAR_ADDRESS is required")
+	}
+	if c.Seed == "" {
+		return fmt.Errorf("STELLAR_SEED is required")
+	}
+	return nil
 }
 
 func Get() *Config {

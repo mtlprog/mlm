@@ -43,6 +43,11 @@ func main() {
 
 	cfg := config.Get()
 
+	if err := cfg.Validate(); err != nil {
+		l.ErrorContext(ctx, err.Error())
+		os.Exit(1)
+	}
+
 	pg, err := pgx.Connect(ctx, cfg.PostgresDSN)
 	if err != nil {
 		l.ErrorContext(ctx, err.Error())
