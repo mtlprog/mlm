@@ -66,6 +66,12 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 	if len(res.Distributes) > 0 {
 		fmt.Fprintf(rep, "\n\n<b>Распределение</b>\n")
 
+		// Группируем дельты по рекомендателю
+		deltasByRecommender := make(map[string][]mlm.RecommendDelta)
+		for _, d := range res.RecommendDeltas {
+			deltasByRecommender[d.Recommender] = append(deltasByRecommender[d.Recommender], d)
+		}
+
 		isEmpty := true
 
 		for _, d := range res.Distributes {
@@ -79,6 +85,16 @@ func FromDistributeResult(res mlm.DistributeResult) string {
 				strings.Join([]string{bsnViewerPrefix, d.Recommender}, ""),
 				accountAbbr(d.Recommender),
 				d.Amount)
+
+			// Выводим рекомендуемые счета с изменением MTLAP
+			if deltas, ok := deltasByRecommender[d.Recommender]; ok {
+				for _, delta := range deltas {
+					fmt.Fprintf(rep, "\n  └ <a href=\"%s\">%s</a>: +%d MTLAP",
+						strings.Join([]string{bsnViewerPrefix, delta.Recommended}, ""),
+						accountAbbr(delta.Recommended),
+						delta.Delta)
+				}
+			}
 		}
 
 		if isEmpty {

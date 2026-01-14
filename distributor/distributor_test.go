@@ -38,6 +38,10 @@ func TestCalculateParts(t *testing.T) {
 				AmountPerTag:            100.0 / 30.0, // 100 / (10 + 20)
 				RecommendedNewCount:     2,
 				RecommendedLevelUpCount: 2,
+				RecommendDeltas: []mlm.RecommendDelta{
+					{Recommender: "rec1", Recommended: "user1", Delta: 10},
+					{Recommender: "rec1", Recommended: "user2", Delta: 20},
+				},
 			},
 		},
 		{
@@ -65,6 +69,10 @@ func TestCalculateParts(t *testing.T) {
 				AmountPerTag:            100.0 / 15.0, // 100 / (5 + 10)
 				RecommendedNewCount:     0,
 				RecommendedLevelUpCount: 2,
+				RecommendDeltas: []mlm.RecommendDelta{
+					{Recommender: "rec1", Recommended: "user1", Delta: 5},
+					{Recommender: "rec1", Recommended: "user2", Delta: 10},
+				},
 			},
 		},
 		{
@@ -89,6 +97,9 @@ func TestCalculateParts(t *testing.T) {
 				AmountPerTag:            100.0 / 20.0, // 100 / 20 (user1 в конфликте)
 				RecommendedNewCount:     1,
 				RecommendedLevelUpCount: 1,
+				RecommendDeltas: []mlm.RecommendDelta{
+					{Recommender: "rec1", Recommended: "user2", Delta: 20},
+				},
 			},
 		},
 		{
@@ -116,6 +127,7 @@ func TestCalculateParts(t *testing.T) {
 				AmountPerTag:            0,
 				RecommendedNewCount:     0,
 				RecommendedLevelUpCount: 0,
+				RecommendDeltas:         []mlm.RecommendDelta{},
 			},
 		},
 	}
@@ -127,6 +139,7 @@ func TestCalculateParts(t *testing.T) {
 			require.InDelta(t, tt.want.AmountPerTag, got.AmountPerTag, 0.0001)
 			require.Equal(t, tt.want.RecommendedNewCount, got.RecommendedNewCount)
 			require.Equal(t, tt.want.RecommendedLevelUpCount, got.RecommendedLevelUpCount)
+			require.Equal(t, tt.want.RecommendDeltas, got.RecommendDeltas)
 		})
 	}
 }

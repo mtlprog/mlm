@@ -45,6 +45,13 @@ type MissingTrustline struct {
 	Asset     string
 }
 
+// RecommendDelta содержит информацию об изменении MTLAP для отображения в отчете
+type RecommendDelta struct {
+	Recommender string
+	Recommended string
+	Delta       int64
+}
+
 type DistributeResult struct {
 	CreatedAt               time.Time
 	XDR                     string
@@ -52,6 +59,7 @@ type DistributeResult struct {
 	Recommends              []db.ReportRecommend
 	Distributes             []db.ReportDistribute
 	MissingTrustlines       []MissingTrustline
+	RecommendDeltas         []RecommendDelta
 	ReportID                int64
 	Amount                  float64
 	AmountPerTag            float64

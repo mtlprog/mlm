@@ -133,11 +133,12 @@ func (d *Distributor) CalculateParts(
 	recs *mlm.RecommendersFetchResult,
 ) (*mlm.DistributeResult, error) {
 	res := &mlm.DistributeResult{
-		Conflicts:   make([]db.ReportConflict, 0),
-		Recommends:  make([]db.ReportRecommend, 0),
-		Distributes: make([]db.ReportDistribute, 0),
-		CreatedAt:   time.Now(),
-		Amount:      distributeAmount,
+		Conflicts:       make([]db.ReportConflict, 0),
+		Recommends:      make([]db.ReportRecommend, 0),
+		Distributes:     make([]db.ReportDistribute, 0),
+		RecommendDeltas: make([]mlm.RecommendDelta, 0),
+		CreatedAt:       time.Now(),
+		Amount:          distributeAmount,
 	}
 
 	// Сначала посчитаем общее количество новых/измененных MTLAP
@@ -185,9 +186,21 @@ func (d *Distributor) CalculateParts(
 			if !ok {
 				res.RecommendedNewCount++
 			}
+
+			delta := int64(0)
 			if lastMTLAP < recommended.MTLAP {
-				partCount += recommended.MTLAP - lastMTLAP
+				delta = recommended.MTLAP - lastMTLAP
+				partCount += delta
 				res.RecommendedLevelUpCount++
+			}
+
+			// Добавляем в RecommendDeltas только если есть изменение
+			if delta > 0 {
+				res.RecommendDeltas = append(res.RecommendDeltas, mlm.RecommendDelta{
+					Recommender: recommender.AccountID,
+					Recommended: recommended.AccountID,
+					Delta:       delta,
+				})
 			}
 
 			res.Recommends = append(res.Recommends, db.ReportRecommend{
